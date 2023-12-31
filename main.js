@@ -5,8 +5,8 @@ let flagSelected = false;
 let nFlags = 0;
 // [[Titulo_dificuldade, numero_bombas, numero_linhas, numero_colunas]]
 let difficult = [["Fácil", 7, 7, 7],
-                 ["Médio", 20, 15, 15],
-                 ["Difícil", 80, 20, 40]];
+                 ["Médio", 30, 15, 15],
+                 ["Difícil", 90, 20, 40]];
 let currentDifficult = 0;
 let numMines = difficult[currentDifficult][1];
 let rows = difficult[currentDifficult][2];
@@ -27,19 +27,23 @@ function setDifficulty() {
     restartGame();
 }
 
-function generateMines() {
+function generateMines(row, column) {
     let mineInserts = 0;
+    let r = 0;
+    let c = 0;
 
     while (mineInserts < numMines) {
-        let r = Math.floor(Math.random() * rows);
-        let c = Math.floor(Math.random() * columns);
-        let id = r.toString() + "-" + c.toString();
+        r = Math.floor(Math.random() * rows);
+        c = Math.floor(Math.random() * columns);
 
-        if (!minesLocation.includes(id)) {
-            minesLocation.push(id);
-            mineInserts += 1;
+        // A bomba precisa estar a pelo menos, 2 quadrados de distância do primeiro clique
+        if (Math.abs(row-r) > 1 || Math.abs(column-c) > 1) {
+            let id = r.toString() + "-" + c.toString();
+            if (!minesLocation.includes(id)) {
+                minesLocation.push(id);
+                mineInserts += 1;
+            }
         }
-
     }
 }
 
@@ -56,6 +60,7 @@ function restartGame () {
     img.style.transition="none";
     img.style.opacity="0";
     img.style.transform = "translateY(100%)";
+    img.src="";
 
     document.getElementById("board").innerHTML = "";
     minesLocation = [];
@@ -71,10 +76,11 @@ function startGame() {
     rows = difficult[currentDifficult][2];
     columns = difficult[currentDifficult][3];
     numMines = difficult[currentDifficult][1];
+    numCoveredTiles = rows*columns;
     document.getElementById("mine-count").innerText = numMines-nFlags;
     document.getElementById("difficulty").innerText = difficult[currentDifficult][0];
     endGame = 0;
-    generateMines(5);
+    // generateMines(5);
     let boardElement = document.getElementById("board");
     boardElement.style.gridTemplateColumns = `repeat(${columns}, 35px)`;
     boardElement.style.gridTemplateRows = `repeat(${rows}, 35px)`;
@@ -99,6 +105,11 @@ function startGame() {
 }
 
 function clickTile() {
+    if (numCoveredTiles==rows*columns) {
+        let r = parseInt(this.id.split("-")[0]);
+        let c = parseInt(this.id.split("-")[1]);
+        generateMines(r, c);
+    }
     if (endGame == 0) {
         let tile = this;
         if (flagSelected) {
@@ -121,7 +132,6 @@ function clickTile() {
             checkTile(r, c);
         }
     }
-    console.log(numCoveredTiles);
     if (numCoveredTiles == numMines) {
         endGame = 1;
         let img = document.querySelector(".img-win");
@@ -193,7 +203,7 @@ function selectFlag() {
 }
 
 function addFlag(div) {
-    if (endGame == 0) {
+    if (endGame == 0 && !div.classList.contains("tile-clicked")) {
         if (div.innerText == "🚩") {
             div.innerText = "";    
             nFlags -= 1;
